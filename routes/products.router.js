@@ -1,7 +1,8 @@
 const express = require('express');
 const faker = require('faker');
 const ProductsService = require('./../services/product.services');
-
+const validatorHandler = require('./../middlewares/validator.handler');
+const { createProductSchema, updateProductSchema, getProductSchema } = require('./../schemas/product.schema');
 
 const router = express.Router();
 const service = new ProductsService();
@@ -15,32 +16,39 @@ router.get('/filter', (req, res) => {
   res.send('Yo soy un filter');
 });
 
-router.get('/:id', async (req, res, next) => { //se agrega el next
-  try {
-    const { id } = req.params;
-    const product = await service.findOne(id);
-    res.json(product);
-  } catch (error) {
-    next(error); //se agrega el next para atrapar de forma explicita el error con el middleware
-  }
-});
+router.get('/:id',
+  validatorHandler(getProductSchema, 'params'),
+  async (req, res, next) => { //se agrega el next
+    try {
+      const { id } = req.params;
+      const product = await service.findOne(id);
+      res.json(product);
+    } catch (error) {
+      next(error); //se agrega el next para atrapar de forma explicita el error con el middleware
+    }
+  });
 
-router.post('/', async (req, res) => {
-  const body = req.body;
-  const newProduct = await service.create(body);
-  res.status(201).json(newProduct);
-});
-
-router.patch('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
+router.post('/',
+  validatorHandler(createProductSchema, 'body'),
+  async (req, res) => {
     const body = req.body;
-    const product = await service.update(id, body)
-    res.json(product);
-  } catch (error) {
-    res.status(404).json({ message: error.message });
-  }
-});
+    const newProduct = await service.create(body);
+    res.status(201).json(newProduct);
+  });
+
+router.patch('/:id',
+  validatorHandler(getProductSchema, 'params'),
+  validatorHandler(updateProductSchema, 'body'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const body = req.body;
+      const product = await service.update(id, body)
+      res.json(product);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
+  });
 
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
