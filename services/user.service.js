@@ -6,6 +6,7 @@ class UserService {
   constructor() {}
 
   async create(data) {
+    const newUSer = await models.User.create(data);
     return data;
   }
 
@@ -15,17 +16,25 @@ class UserService {
   }
 
   async findOne(id) {
-    return { id };
+    const user = await models.User.findByPk(id);
+    if(!user){
+     throw boom.notFound('user not found');
+    }
+    return { user };
   }
 
   async update(id, changes) {
-    return {
-      id,
-      changes,
-    };
+    const user = await models.User.findByPk(id);
+    if(!user){
+      throw boom.notFound('user not found');
+     }
+    const rta = await user.update(changes);
+    return rta;
   }
 
   async delete(id) {
+    const user = await models.User.findByPk(id);
+    await user.destroy();
     return { id };
   }
 }
